@@ -8,8 +8,16 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Request } from 'express';
 import { CreateTarefaDto } from './dto/create-tarefa.dto';
 import { UpdateTarefaDto } from './dto/update-tarefa.dto';
 import { TarefasService } from './tarefas.service';
@@ -32,8 +40,28 @@ export class TarefasController {
   }
 
   @Post()
-  create(@Body() dto: CreateTarefaDto) {
-    return this.tarefasService.create(dto);
+  create(@Body() dto: CreateTarefaDto, @Req() req: Request) {
+    const email = (req.user as { email?: string })?.email;
+    return this.tarefasService.create(dto, email);
+  }
+
+  @Post(':id/anexo')
+  @UseInterceptors(FileInterceptor('arquivo'))
+  anexar(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({
+            fileType: /^(image\/png|image\/jpeg|image\/webp|image\/gif|application\/pdf)$/,
+          }),
+        ],
+      }),
+    )
+    arquivo: Express.Multer.File,
+  ) {
+    return this.tarefasService.anexar(id, arquivo);
   }
 
   @Put(':id')

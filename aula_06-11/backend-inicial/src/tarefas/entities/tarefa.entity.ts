@@ -13,4 +13,7 @@ export class Tarefa {
 
   @Column({ default: false })
   concluida: boolean;
+
+  @Column({ nullable: true })
+  anexoUrl?: string;
 }

@@ -3,9 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TarefasController } from './tarefas.controller';
 import { TarefasService } from './tarefas.service';
 import { Tarefa } from './entities/tarefa.entity';
+import { StorageModule } from '../storage/storage.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tarefa])],
+  imports: [TypeOrmModule.forFeature([Tarefa]), StorageModule, MailModule],
   controllers: [TarefasController],
   providers: [TarefasService],
 })

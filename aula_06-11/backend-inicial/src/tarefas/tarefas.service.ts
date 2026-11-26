@@ -4,12 +4,16 @@ import { Repository } from 'typeorm';
 import { CreateTarefaDto } from './dto/create-tarefa.dto';
 import { UpdateTarefaDto } from './dto/update-tarefa.dto';
 import { Tarefa } from './entities/tarefa.entity';
+import { StorageService } from '../storage/storage.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class TarefasService {
   constructor(
     @InjectRepository(Tarefa)
     private readonly tarefaRepo: Repository<Tarefa>,
+    private readonly storage: StorageService,
+    private readonly mail: MailService,
   ) {}
 
   findAll(): Promise<Tarefa[]> {
@@ -24,8 +28,23 @@ export class TarefasService {
     return tarefa;
   }
 
-  create(dto: CreateTarefaDto): Promise<Tarefa> {
-    const tarefa = this.tarefaRepo.create(dto);
+  async create(dto: CreateTarefaDto, emailUsuario?: string) {
+    const tarefa = await this.tarefaRepo.save(this.tarefaRepo.create(dto));
+
+    if (emailUsuario) {
+      this.mail
+        .tarefaCriada(emailUsuario, tarefa.titulo)
+        .catch((error) =>
+          console.error('Falha ao enviar e-mail:', error?.message || error),
+        );
+    }
+
+    return tarefa;
+  }
+
+  async anexar(id: number, arquivo: Express.Multer.File) {
+    const tarefa = await this.findOne(id);
+    tarefa.anexoUrl = await this.storage.enviar(arquivo);
     return this.tarefaRepo.save(tarefa);
   }
 
